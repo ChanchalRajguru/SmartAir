@@ -10,11 +10,12 @@ import pymongo
 import json
 
 myclient = pymongo.MongoClient("mongodb://localhost:27017/")
-mydb = myclient["carbonPollution"]
+mydb = myclient["averageCarbonPollution"]
 
 #Creates a dict of list for all states in USA
 #Output {"statename1":[], "statename2":[],.....}
 def usStatesList(fileName):
+    print("In usStatesList function")
     statesList = []
     statesDict = {}
     with open(fileName, newline='') as csvfile:
@@ -30,7 +31,8 @@ def usStatesList(fileName):
 #Take the mean value for all the occurance for each state from Carbon.csv file for the given pollutant.
 #Output {"statename1":[12.827382728], "statename2":[17.436762099],.....}
 def avgValue(fileName):
-    pollutantDict = usStatesList('data\Carbon.csv') #calling usStatesList function returns {"statename1":[], "statename2":[],.....}
+    pollutantDict = usStatesList('data/Carbon.csv') #calling usStatesList function returns {"statename1":[], "statename2":[],.....}
+    print("In avgValue function")
     avgDict = {}
     with open(fileName, newline='') as csvfile:
         reader = csv.DictReader(csvfile, delimiter='\t') # Reading the Carbon.csv file
@@ -47,20 +49,27 @@ def avgValue(fileName):
 
 #Creates a JSON FeatureCollection and inserts it into MongoDB
 def carbonJson():
-    avgDict = avgValue('data\Carbon.csv') #returns {"statename1":[12.827382728], "statename2":[17.436762099],.....}
+    print("In carbonJson function")
+    avgDict = avgValue('data/Carbon.csv') #returns {"statename1":[12.827382728], "statename2":[17.436762099],.....}
+    avgList = []
     with open('data/us-states.json', newline='') as json_file: # using an exiting json file which has the Polygon Co-ordinates
         data = json.load(json_file)
         for state in avgDict:
             for key in data["features"]:
                 if state == key["properties"]["name"]:
                     key["properties"]["carbon"] = avgDict[state] #adding the carbon mean data to the JOSN file. 
-        mycol = mydb["carbonFeatureJson"]
-        
-        #Inserting it into MongoDB
-        # jsondata = mycol.insert_many([data]) #[ObjectId('5e8726922a655e3947524340')] 
-        
+                    # print("data", data) 
+                    avgList.append(key)
+        mycol = mydb["carbonFeatureJsonList"]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
+
+        # #Inserting it into MongoDB
+        # jsondata = mycol.insert_many(avgList)  
+        jsondata = mycol.insert_many(data) #[ObjectId('5e8726922a655e3947524340')] 
+
+        print("Inserting into Mongo!!")
+
         #print list of the _id values of the inserted documents:
-        # print(jsondata.inserted_ids) 
+        print(jsondata.inserted_ids) 
         
         # f = open("data/carbon.json", "a")
         # f.write(json.dumps(data))

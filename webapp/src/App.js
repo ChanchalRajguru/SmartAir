@@ -5,17 +5,24 @@ import { Map, Marker, Popup, } from "react-leaflet";
 import { Icon } from "leaflet";
 import * as ReactLeaflet from "react-leaflet"
 import ReactDOM from 'react-dom';
-import * as carbobData from "./data/carbonFeaturesCollecJson.json";
+// import * as carbobData from "./data/carbonFeaturesCollecJson.json";
 import * as forestJson from "./data/ForestJson.json"
+import * as carbonJSON from "./data/carbonFeaturesCollection.json"
 
 
 const forest = forestJson.features
+// const data = { type: "FeatureCollection", features: carbonJSON.default };
+// const newdata = data
 
-const newdata = carbobData.features //change back to data
 
-const { Map: LeafletMap, MapLayer, TileLayer, GeoJSON, LayerGroup, LayersControl, FeatureGroup } = ReactLeaflet;
+// const newdata = carbobData.features //change back to data
+
+const { Map: LeafletMap, Polygon, Pane, MapLayer, TileLayer, GeoJSON, LayerGroup, LayersControl, FeatureGroup } = ReactLeaflet;
 
 const { BaseLayer, Overlay } = LayersControl
+
+
+const polygon = [[32, -88], [32, -79], [24, -79], [24, -88], [32, -88]]
 
 // variable declaration for carbon
 let mapRef;
@@ -82,16 +89,18 @@ function zoomToFeature(e) {
 }
 
 function App() {
-  //Getting Data from Flask
-  const [data, setCarbonData] = useState(); //setting the data to the data variable
+  /////// Getting Data from Flask
+  const [newdata, setCarbonData] = useState(); //setting the data to the data variable
   useEffect(() => {
     fetch("/map").then(response => // returns featureCollection for carbon
       response.json().then(flaskdata => {
         setCarbonData(flaskdata[0]);
       })
     );
-  });
 
+  },[]);
+
+  console.log("newdataChan", newdata);
   // Mapping code for base layer  
   const [selected, setSelected] = React.useState({});
 
@@ -112,10 +121,12 @@ function App() {
       layer.bringToFront();
     }
   }
+
   function resetHighlight(e) {
     setSelected({});
     e.target.setStyle(style(e.target.feature));
   }
+
   function onEachFeature(feature, layer) {
     layer.on({
       mouseover: highlightFeature,
@@ -123,6 +134,7 @@ function App() {
       click: zoomToFeature
     });
   }
+
   return (
     <div className="panel">
       <div className="panel__map">
@@ -155,9 +167,9 @@ function App() {
         </div>
         <LeafletMap
           style={{ width: "100%", height: "100%" }}
-          zoom={4}
+          zoom={1}
           zoomControl={false}
-          maxZoom={4}
+          //maxZoom={4}
           center={[37.8, -96]}
           whenReady={e => {
             mapRef = e.target;
@@ -167,20 +179,34 @@ function App() {
             ]);
           }}
         >
-          <TileLayer
-            attribution="Map tiles by Carto, under CC BY 3.0. Data by OpenStreetMap, under ODbL."
-            url="https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png"
-          />
-
-          {data && (
-            <GeoJSON data={data} style={style} onEachFeature={onEachFeature} />
-          )}
-          {data && (
-            <GeoJSON data={forest} style={styleForest} onEachFeature={onEachFeature} />
-          )}
-
-        </LeafletMap>
-      </div>
+          <LayersControl position="topright">
+            <BaseLayer checked name="OpenStreetMap.Mapnik">
+              <TileLayer
+                attribution="Map tiles by Carto, under CC BY 3.0. Data by OpenStreetMap, under ODbL."
+                url="https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png"
+              />
+            </BaseLayer>
+            <BaseLayer name="OpenStreetMap.BlackAndWhite">
+              <TileLayer
+                attribution='&amp;copy <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+                url="https://tiles.wmflabs.org/bw-mapnik/{z}/{x}/{y}.png"
+              />
+            </BaseLayer>
+            <Overlay checked name="Counties Layer">
+              <Pane name="countiesPane" style={{ zIndex: 500 }}>
+                {newdata && (
+                  <GeoJSON key='counties' data={newdata} style={style} onEachFeature={onEachFeature} />
+                )}
+              </Pane>
+            </Overlay>
+            <Overlay checked name="Forests Layer">
+              <Pane name="forestsPane" style={{ zIndex: 501 }}>
+                {<GeoJSON key='forests' data={forest} style={styleForest} onEachFeature={onEachFeature} />}
+              </Pane>
+            </Overlay>
+            {/* <Polygon positions={polygon} color='purple' /> */}
+          </LayersControl>
+        </LeafletMap>      </div>
     </div>
   );
 }

@@ -8,8 +8,8 @@ app = Flask(__name__)
 # mydb = myclient["carbonPollution"]
 # mycol = mydb["carbonFeatureJson"]
 
-app.config['MONGO_DBNAME'] = 'carbonPollution'
-app.config['MONGO_URI']= 'mongodb://localhost:27017/carbonPollution'
+app.config['MONGO_DBNAME'] = 'averageCarbonPollution'
+app.config['MONGO_URI']= 'mongodb://localhost:27017/averageCarbonPollution'
 mongo = PyMongo(app)
 
 @app.route('/status', methods=['GET'])
@@ -18,17 +18,16 @@ def hello_world():
 
 @app.route('/map', methods=['GET'])
 def carbonPollution():
-    carbonData = mongo.db.carbonFeatureJson
+    carbonData = mongo.db.carbonFeatureJsonDict
     result = []
     for field in carbonData.find():
         result.append({"type":field['type'],"features":field['features']})
     return jsonify(result), 200
 
 
-#Setups the Initial Workflow for the app
+###Setups the Initial Workflow for the app
 # def setup_app(app):
-#     pass
-# #    dataCleaning()
+#    dataCleaning()
 
 # setup_app(app)
 
