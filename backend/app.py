@@ -1,12 +1,10 @@
 from flask import Flask, jsonify, request
 from flask_pymongo import PyMongo
 from usDataCleaning import dataCleaning
+import json
+from bson import json_util, ObjectId
 
 app = Flask(__name__)
-
-# myclient = pymongo.MongoClient("mongodb://localhost:27017/")
-# mydb = myclient["carbonPollution"]
-# mycol = mydb["carbonFeatureJson"]
 
 app.config['MONGO_DBNAME'] = 'averageCarbonPollution'
 app.config['MONGO_URI']= 'mongodb://localhost:27017/averageCarbonPollution'
@@ -18,12 +16,15 @@ def hello_world():
 
 @app.route('/map', methods=['GET'])
 def carbonPollution():
-    carbonData = mongo.db.carbonFeatureJsonDict
+    carbonData = mongo.db.carbonFeatureJsonList
     result = []
+    finalResult = []
     for field in carbonData.find():
-        result.append({"type":field['type'],"features":field['features']})
-    return jsonify(result), 200
-
+        # result.append({"type":field['type'],"features":field['features']})
+        result.append(field)
+    results = json.loads(json_util.dumps(result))
+    finalResult = {"type":"FeatureCollection","features":results}
+    return jsonify(finalResult), 200
 
 ###Setups the Initial Workflow for the app
 # def setup_app(app):

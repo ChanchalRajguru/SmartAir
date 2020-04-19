@@ -5,7 +5,6 @@ import { Map, Marker, Popup, } from "react-leaflet";
 import { Icon } from "leaflet";
 import * as ReactLeaflet from "react-leaflet"
 import ReactDOM from 'react-dom';
-// import * as carbobData from "./data/carbonFeaturesCollecJson.json";
 import * as forestJson from "./data/ForestJson.json"
 import * as carbonJSON from "./data/carbonFeaturesCollection.json"
 
@@ -90,17 +89,18 @@ function zoomToFeature(e) {
 
 function App() {
   /////// Getting Data from Flask
+  
   const [newdata, setCarbonData] = useState(); //setting the data to the data variable
   useEffect(() => {
+    console.log("here...")
     fetch("/map").then(response => // returns featureCollection for carbon
       response.json().then(flaskdata => {
-        setCarbonData(flaskdata[0]);
+        setCarbonData(flaskdata);
       })
     );
+  }, []);
 
-  },[]);
 
-  console.log("newdataChan", newdata);
   // Mapping code for base layer  
   const [selected, setSelected] = React.useState({});
 
@@ -122,6 +122,26 @@ function App() {
     }
   }
 
+  //For Forest
+  function highlightFeatureForest(e) {
+    var layer = e.target;
+    const { FORESTNAME, GIS_ACRES } = e.target.feature.properties;
+    setSelected({
+      provinceForest: `${FORESTNAME}`,
+      countForest: GIS_ACRES
+    });
+    layer.setStyle({
+      weight: 2,
+      color: "#DF1995",
+      dashArray: "",
+      fillOpacity: 1
+    });
+    if (1 == 1) {
+      layer.bringToFront();
+    }
+  }
+
+
   function resetHighlight(e) {
     setSelected({});
     e.target.setStyle(style(e.target.feature));
@@ -130,6 +150,15 @@ function App() {
   function onEachFeature(feature, layer) {
     layer.on({
       mouseover: highlightFeature,
+      mouseout: resetHighlight,
+      click: zoomToFeature
+    });
+  }
+
+  //For Forest
+  function onEachFeatureForest(feature, layer) {
+    layer.on({
+      mouseover: highlightFeatureForest,
       mouseout: resetHighlight,
       click: zoomToFeature
     });
@@ -156,6 +185,15 @@ function App() {
             <span class="countCol"><h4>{selected.count}&nbsp;&nbsp;&nbsp; CO2/parts per billion</h4></span>
           </div>
         )}
+        {/* for forest */}
+        {selected.provinceForest && (
+          <div className="info">
+            <h2>{selected.provinceForest}</h2>
+            <span class="countCol"><h4>{selected.countForest}&nbsp;&nbsp;&nbsp; acres</h4></span>
+          </div>
+        )}
+
+
         <div className="legend">
           <p class="colWh">Carbon Pollution</p>
           <div style={{ "--color": COLOR_10 }}>15+</div>
@@ -192,7 +230,7 @@ function App() {
                 url="https://tiles.wmflabs.org/bw-mapnik/{z}/{x}/{y}.png"
               />
             </BaseLayer>
-            <Overlay checked name="Counties Layer">
+            <Overlay checked name="States Layer">
               <Pane name="countiesPane" style={{ zIndex: 500 }}>
                 {newdata && (
                   <GeoJSON key='counties' data={newdata} style={style} onEachFeature={onEachFeature} />
@@ -201,7 +239,7 @@ function App() {
             </Overlay>
             <Overlay checked name="Forests Layer">
               <Pane name="forestsPane" style={{ zIndex: 501 }}>
-                {<GeoJSON key='forests' data={forest} style={styleForest} onEachFeature={onEachFeature} />}
+                {<GeoJSON key='forests' data={forest} style={styleForest} onEachFeature={onEachFeatureForest} />}
               </Pane>
             </Overlay>
             {/* <Polygon positions={polygon} color='purple' /> */}

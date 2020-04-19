@@ -21,8 +21,8 @@ database = db.carbonFeatureJsonList
 
 
 
-# query = {'geometry': {'$geoIntersects': {'$geometry': {'type' : "Polygon" , 'coordinates': [ [ [ -88, 32], [-79, 32], [ -79, 24], [ -88, 24], [-88,32] ] ]}}}}
-query = {'geometry': {'$within': {'$geometry': {'type' : "Polygon" , 'coordinates': [ [ [ -88, 32], [-79, 32], [ -79, 24], [ -88, 24], [-88,32] ] ]}}}}
+query = {'geometry': {'$geoIntersects': {'$geometry': {'type' : "Polygon" , 'coordinates': [ [ [ -88, 32], [-79, 32], [ -79, 24], [ -88, 24], [-88,32] ] ]}}}}
+# query = {'geometry': {'$within': {'$geometry': {'type' : "Polygon" , 'coordinates': [ [ [ -88, 32], [-79, 32], [ -79, 24], [ -88, 24], [-88,32] ] ]}}}}
 
 
 for doc in database.find(query):
