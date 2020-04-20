@@ -26,6 +26,18 @@ def carbonPollution():
     finalResult = {"type":"FeatureCollection","features":results}
     return jsonify(finalResult), 200
 
+@app.route('/forest', methods=['GET'])
+def forestData():
+    forestData = mongo.db.forestList
+    result = []
+    finalResult = []
+    data = forestData.find_one()
+    result.append(data)
+    results = json.loads(json_util.dumps(result))
+    finalResult = {"type":"FeatureCollection","features":results}
+    return jsonify(finalResult), 200
+
+
 ###Setups the Initial Workflow for the app
 # def setup_app(app):
 #    dataCleaning()

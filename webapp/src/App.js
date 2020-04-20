@@ -7,16 +7,22 @@ import * as ReactLeaflet from "react-leaflet"
 import ReactDOM from 'react-dom';
 import * as forestJson from "./data/ForestJson.json"
 import * as carbonJSON from "./data/carbonFeaturesCollection.json"
+import * as carbobData from "./data/carbonFeaturesCollecJson.json"
+import axios from "axios";
+import { AxiosProvider, Request, Get, Delete, Head, Post, Put, Patch, withAxios } from 'react-axios'
 
 
 const forest = forestJson.features
+console.log('forest at 0 : ', forestJson.features[0])
+console.log('forest at 1 : ', forestJson.features[1])
 // const data = { type: "FeatureCollection", features: carbonJSON.default };
 // const newdata = data
 
+let forest_SHAPE_Area = null;
 
 // const newdata = carbobData.features //change back to data
 
-const { Map: LeafletMap, Polygon, Pane, MapLayer, TileLayer, GeoJSON, LayerGroup, LayersControl, FeatureGroup } = ReactLeaflet;
+const { Map: LeafletMap, Polygon, Pane, MapLayer, TileLayer, GeoJSON, LayerGroup, LayersControl, FeatureGroup, CheckBox } = ReactLeaflet;
 
 const { BaseLayer, Overlay } = LayersControl
 
@@ -89,17 +95,36 @@ function zoomToFeature(e) {
 
 function App() {
   /////// Getting Data from Flask
-  
   const [newdata, setCarbonData] = useState(); //setting the data to the data variable
+
   useEffect(() => {
     console.log("here...")
     fetch("/map").then(response => // returns featureCollection for carbon
       response.json().then(flaskdata => {
         setCarbonData(flaskdata);
+        // console.log("carbon data...", flaskdata);
       })
     );
   }, []);
 
+
+  const [forestNew, setForestData] = useState(); //setting the data to the data variable
+
+  useEffect(() => {
+    console.log("In forest function...")
+    fetch("/forest").then(response => // returns featureCollection for carbon
+      response.json().then(forestdata => {
+        setForestData(forestdata.features);
+        // forest_SHAPE_Area = forestdata.features[0].properties.SHAPE_Area
+        // console.log("forestdata..... : ", forestdata.features[0].properties.SHAPE_Area)
+      })
+    );
+  }, []);
+
+  // for (let [key, value] of Object.entries(newdata)) {
+  //   console.log("Carbon new ",`${key}: ${value}`);
+  // }
+  
 
   // Mapping code for base layer  
   const [selected, setSelected] = React.useState({});
@@ -164,6 +189,13 @@ function App() {
     });
   }
 
+  // Function to calculate reduced carbon
+  
+  function  calcutaleReducedCarbon(){
+    console.log("Forest area........",forest_SHAPE_Area);
+  }
+
+
   return (
     <div className="panel">
       <div className="panel__map">
@@ -186,6 +218,12 @@ function App() {
           </div>
         )}
         {/* for forest */}
+        {selected.provinceForest && (
+          <div className="info">
+            <h2>{selected.provinceForest}</h2>
+            <span class="countCol"><h4>{selected.countForest}&nbsp;&nbsp;&nbsp; acres</h4></span>
+          </div>
+        )}
         {selected.provinceForest && (
           <div className="info">
             <h2>{selected.provinceForest}</h2>
@@ -239,9 +277,11 @@ function App() {
             </Overlay>
             <Overlay checked name="Forests Layer">
               <Pane name="forestsPane" style={{ zIndex: 501 }}>
-                {<GeoJSON key='forests' data={forest} style={styleForest} onEachFeature={onEachFeatureForest} />}
+                {forestNew && (
+                  <GeoJSON key='forests' data={forestNew} style={styleForest} onEachFeature={onEachFeatureForest} />)}
               </Pane>
             </Overlay>
+              
             {/* <Polygon positions={polygon} color='purple' /> */}
           </LayersControl>
         </LeafletMap>      </div>

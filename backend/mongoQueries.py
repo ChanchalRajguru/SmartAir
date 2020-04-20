@@ -18,25 +18,13 @@ from bson.son import SON
 db = MongoClient().averageCarbonPollution
 database = db.carbonFeatureJsonList
 
-
-
-
 query = {'geometry': {'$geoIntersects': {'$geometry': {'type' : "Polygon" , 'coordinates': [ [ [ -88, 32], [-79, 32], [ -79, 24], [ -88, 24], [-88,32] ] ]}}}}
 # query = {'geometry': {'$within': {'$geometry': {'type' : "Polygon" , 'coordinates': [ [ [ -88, 32], [-79, 32], [ -79, 24], [ -88, 24], [-88,32] ] ]}}}}
+# for doc in database.find(query):
+#     pprint.pprint(doc)
 
-
-for doc in database.find(query):
+query_maxDistance = {'geometry': {'$near': {'$geometry': {'type' : "Polygon" , 'coordinates': [ [ [ -88, 32], [-79, 32], [ -79, 24], [ -88, 24], [-88,32] ] ], }},("$maxDistance", 100) }}
+for doc in database.find(query_maxDistance):
     pprint.pprint(doc)
 
-############# Documentation ################
 
-# db = MongoClient().geo_example
-# index = db.places.create_index([("loc", GEO2D)])
-# print(db)
-
-
-# result = db.places.insert_many([{"loc": [2, 5]},{"loc": [30, 5]},{"loc": [1, 2]},{"loc": [4, 4]}])  
-# print(result.inserted_ids)
-
-# for doc in db.places.find({"loc": {"$near": [3, 6]}}).limit(3):
-#     pprint.pprint(doc)
