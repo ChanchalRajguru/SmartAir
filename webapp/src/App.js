@@ -5,16 +5,16 @@ import { Map, Marker, Popup, } from "react-leaflet";
 import { Icon } from "leaflet";
 import * as ReactLeaflet from "react-leaflet"
 import ReactDOM from 'react-dom';
-import * as forestJson from "./data/ForestJson.json"
-import * as carbonJSON from "./data/carbonFeaturesCollection.json"
-import * as carbobData from "./data/carbonFeaturesCollecJson.json"
+// import * as forestJson from "./data/ForestJson.json"
+// import * as carbonJSON from "./data/carbonFeaturesCollection.json"
+// import * as carbobData from "./data/carbonFeaturesCollecJson.json"
 import axios from "axios";
 import { AxiosProvider, Request, Get, Delete, Head, Post, Put, Patch, withAxios } from 'react-axios'
 
 
-const forest = forestJson.features
-console.log('forest at 0 : ', forestJson.features[0])
-console.log('forest at 1 : ', forestJson.features[1])
+// const forest = forestJson.features
+// console.log('forest at 0 : ', forestJson.features[0])
+// console.log('forest at 1 : ', forestJson.features[1])
 // const data = { type: "FeatureCollection", features: carbonJSON.default };
 // const newdata = data
 
@@ -93,6 +93,11 @@ function zoomToFeature(e) {
   mapRef.fitBounds(e.target.getBounds());
 }
 
+var reductionState = false;
+var reduction1000SQ= false;
+var originalCarbon = 0;
+var originalSecondCarbon = 0; 
+
 function App() {
   /////// Getting Data from Flask
   const [newdata, setCarbonData] = useState(); //setting the data to the data variable
@@ -115,8 +120,6 @@ function App() {
     fetch("/forest").then(response => // returns featureCollection for carbon
       response.json().then(forestdata => {
         setForestData(forestdata.features);
-        // forest_SHAPE_Area = forestdata.features[0].properties.SHAPE_Area
-        // console.log("forestdata..... : ", forestdata.features[0].properties.SHAPE_Area)
       })
     );
   }, []);
@@ -190,21 +193,91 @@ function App() {
   }
 
   // Function to calculate reduced carbon
-  
-  function  calcutaleReducedCarbon(){
-    console.log("Forest area........",forest_SHAPE_Area);
-  }
+  function calculateReducedCarbon(overLayEvent) {
+    if (overLayEvent.name === 'Forest Reduction'){
+      console.log('Do something to show forest reduction to carbon');
+      const GIS_ACRES = forestNew[0].properties.GIS_ACRES;
+      console.log('GIS_ACRES :',GIS_ACRES);
+      // calculate reduction
+      // convert acres to square kilometer (km²) Conversion factor: 1 km2 = 247.10538147 ac
+      const square_kilometer = GIS_ACRES  / 247.10538147;
+      console.log('square_kilometer :',square_kilometer);
+      // reduction in tons
+      const reductionTons  = 265000 * square_kilometer;
+      console.log('reductionTons :', reductionTons);
+      // calculate ppm 
+      const reducedCarbonPPM = reductionTons / 1000000000;
+      console.log('reducedCarbonPPB :', reducedCarbonPPM);
 
+      var items = newdata.features
+      if(!reductionState){
+        items.map((obj)=>{
+          if(obj.properties.name == "Washington"){
+            console.log("Yes.......");
+            originalCarbon = obj.properties.carbon;
+            obj.properties.carbon = originalCarbon - reducedCarbonPPM;
+            reductionState = true;
+          }
+        });
+      }
+      else if(reductionState){
+        items.map((obj)=>{
+          if(obj.properties.name == "Washington"){
+            console.log("No.......");
+            obj.properties.carbon = originalCarbon;
+            reductionState = false;
+          }
+        });
+      }
+    }
+    else if(overLayEvent.name === '1000000 ACRES'){
+      console.log('In 1000000 ACRES');
+      // calculate reduction
+      // convert acres to square kilometer (km²) Conversion factor: 1 km2 = 247.10538147 ac
+      const square_kilometer = 1000000  / 247.10538147;
+      console.log('square_kilometer :',square_kilometer);
+      // reduction in tons
+      const reductionTons  = 265000 * square_kilometer;
+      console.log('reductionTons :', reductionTons);
+      // calculate ppm 
+      const reducedCarbonPPM = reductionTons / 1000000000;
+      console.log('reducedCarbonPPM :', reducedCarbonPPM);
+
+      var items = newdata.features
+      if(!reduction1000SQ){
+        items.map((obj)=>{
+          if(obj.properties.name == "Washington"){
+            console.log("Yes.......");
+            originalSecondCarbon = obj.properties.carbon;
+            obj.properties.carbon = originalSecondCarbon - reducedCarbonPPM;
+            reduction1000SQ = true;
+          }
+        });
+      }
+      else if(reduction1000SQ){
+        items.map((obj)=>{
+          if(obj.properties.name == "Washington"){
+            console.log("No.......");
+            obj.properties.carbon = originalSecondCarbon;
+            reduction1000SQ = false;
+          }
+        });
+      }
+
+    }
+     
+  }
+  
 
   return (
     <div className="panel">
       <div className="panel__map">
         <button
           onClick={() => {
-            mapRef.flyToBounds([
-              [36.2422994, -113.7487596],
-              [36.1890359, -70.97282],
-            ]);
+            // mapRef.flyToBounds([
+            //   [36.2422994, -113.7487596],
+            //   [36.1890359, -70.97282],
+            // ]);
           }}
           className="full-extent"
         />
@@ -234,35 +307,38 @@ function App() {
 
         <div className="legend">
           <p class="colWh">Carbon Pollution</p>
-          <div style={{ "--color": COLOR_10 }}>15+</div>
-          <div style={{ "--color": COLOR_11 }}>13 - 14</div>
-          <div style={{ "--color": COLOR_12 }}>12 - 13</div>
-          <div style={{ "--color": COLOR_13 }}>11 - 12</div>
-          <div style={{ "--color": COLOR_14 }}>10 - 11</div>
-          <div style={{ "--color": COLOR_15 }}>0-10</div>
+          <div style={{ "--color": COLOR_10 }}>13+</div>
+          <div style={{ "--color": COLOR_11 }}>12 - 13</div>
+          <div style={{ "--color": COLOR_12 }}>11 - 12</div>
+          <div style={{ "--color": COLOR_13 }}>10 - 11</div>
+          <div style={{ "--color": COLOR_14 }}>09 - 10</div>
+          <div style={{ "--color": COLOR_15 }}>0-09</div>
         </div>
         <LeafletMap
           style={{ width: "100%", height: "100%" }}
-          zoom={1}
+          zoom={4}
           zoomControl={false}
-          //maxZoom={4}
+          maxZoom={10}
           center={[37.8, -96]}
-          whenReady={e => {
-            mapRef = e.target;
-            e.target.flyToBounds([
-              [36.2422994, -113.7487596],
-              [36.1890359, -70.97282],
-            ]);
-          }}
+          // whenReady={e => {
+          //   mapRef = e.target;
+          //   e.target.flyToBounds([
+          //     [36.2422994, -113.7487596],
+          //     [36.1890359, -70.97282],
+          //   ]);
+          // }}
+
+          onoverlayadd={(e) =>calculateReducedCarbon(e)}
+          onoverlayremove={(e) =>calculateReducedCarbon(e)}  
         >
           <LayersControl position="topright">
-            <BaseLayer checked name="OpenStreetMap.Mapnik">
+            <BaseLayer checked name="OpenStreetMap.BlackAndWhite">
               <TileLayer
                 attribution="Map tiles by Carto, under CC BY 3.0. Data by OpenStreetMap, under ODbL."
                 url="https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png"
               />
             </BaseLayer>
-            <BaseLayer name="OpenStreetMap.BlackAndWhite">
+            <BaseLayer name="OpenStreetMap.Mapnik">
               <TileLayer
                 attribution='&amp;copy <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
                 url="https://tiles.wmflabs.org/bw-mapnik/{z}/{x}/{y}.png"
@@ -281,10 +357,22 @@ function App() {
                   <GeoJSON key='forests' data={forestNew} style={styleForest} onEachFeature={onEachFeatureForest} />)}
               </Pane>
             </Overlay>
-              
+            <Overlay name="Forest Reduction">
+              <Pane name ="forestReductionPane"style={{ zIndex:502 }}>
+                {/* marker at some random position */}
+                <Marker position={[51.51, -0.09]} opacity='0'/>
+              </Pane>
+            </Overlay> 
+            <Overlay name="1000000 ACRES" >
+              <Pane name ="forestReductionPane" style={{ zIndex:509 }}>
+                {/* marker at some random position */}
+                <Marker position={[30.51, -0.09]} opacity='0'/>
+              </Pane>
+            </Overlay>
             {/* <Polygon positions={polygon} color='purple' /> */}
           </LayersControl>
-        </LeafletMap>      </div>
+        </LeafletMap>      
+      </div>
     </div>
   );
 }

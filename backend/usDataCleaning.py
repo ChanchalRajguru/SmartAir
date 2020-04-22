@@ -11,7 +11,7 @@ import pandas as pd #Libary to import and manage datasets
 from csvToJSON import avgValue
 
 
-
+    
 def dataCleaning():
     dataset = pd.read_csv("data\pollution_us_2000_2016.csv")
 
