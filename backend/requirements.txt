@@ -4,7 +4,7 @@ Flask-PyMongo==2.3.0
 geographiclib==1.50
 geopy==1.21.0
 itsdangerous==1.1.0
-Jinja2==2.11.1
+Jinja2==2.11.3
 MarkupSafe==1.1.1
 numpy==1.18.2
 pandas==0.24.2
